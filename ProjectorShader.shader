@@ -65,51 +65,12 @@ Shader "Custom/ProjectorShader"
 
                 return o;
             }
-
-            // fixed4 frag (v2f i) : SV_Target
-            // {
-            //     float2 uv = i.projPos.xy / i.projPos.w;
-            //     uv = uv * 0.5 + 0.5;
-
-            //     // FIXED BOUNDS CHECK - removed i.projPos.w < 0
-            //     if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
-            //     {
-            //         return fixed4(0, 0, 0, 1);
-            //     }
-
-            //     fixed4 projColor = tex2D(_MainTex, uv);
-
-            //     // Calculate distance from projector
-            //     float distance = length(i.worldPos - _ProjectorPos);
-            //     float falloff = 1.0 / pow(max(distance, 0.01), _FalloffPower);
-
-            //     // Calculate angle falloff (surface facing projector)
-            //     float3 projDir = normalize(_ProjectorPos - i.worldPos);
-            //     float angleFalloff = saturate(dot(i.worldNormal, projDir));
-
-            //     // NEW: Center hotspot calculation
-            //     float2 centerOffset = uv - float2(0.5, 0.5);
-            //     float distanceFromCenter = length(centerOffset);
-            //     float centerHotspot = 1.0 - saturate(distanceFromCenter / _CenterHotspotSize);
-            //     centerHotspot = pow(centerHotspot, 2.0);
-            //     float hotspotMultiplier = 1.0 + (centerHotspot * _CenterHotspotIntensity);
-
-            //     // Apply surface color and combine everything (with hotspot)
-            //     fixed4 finalColor = projColor * _SurfaceColor * _Brightness * falloff * angleFalloff * hotspotMultiplier;
-
-            //     // NEW: Apply color temperature
-            //     finalColor.rgb *= _ColorTemperature.rgb;
-
-            //     // NEW: Add black level
-            //     finalColor.rgb += _BlackLevel;
-
-            //     return finalColor;
-            // }
 fixed4 frag (v2f i) : SV_Target
 {
     float2 uv = i.projPos.xy / i.projPos.w;
     uv = uv * 0.5 + 0.5;
     uv.y = 1.0 - uv.y;
+    uv.x = 1.0 - uv.x;
 
     if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
     {

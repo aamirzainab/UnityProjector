@@ -14,7 +14,7 @@ public class SimpleProjector : MonoBehaviour
     public float farClip = 10f;
 
     [Header("Aspect Ratio Settings")]
-    public bool autoCalculateAspectRatio = true; // Automatically use texture aspect ratio
+    public bool autoCalculateAspectRatio = true;
 
     [Header("Auto-Test Settings")]
     public bool autoTestAspectRatio = false;
@@ -22,8 +22,8 @@ public class SimpleProjector : MonoBehaviour
     public float testSpeed = 0.5f;
 
     [Header("Debug Settings")]
-    public bool showDebugInfo = true; // Toggle debug logging
-    public bool showDebugEveryFrame = false; // Show every frame or just once
+    public bool showDebugInfo = true;
+    public bool showDebugEveryFrame = false;
 
     private float timer = 0f;
     private bool hasLoggedOnce = false;
@@ -43,7 +43,6 @@ public class SimpleProjector : MonoBehaviour
             return;
         }
 
-        // Auto-calculate aspect ratio from texture
         if (autoCalculateAspectRatio && projectionTexture != null)
         {
             aspectRatio = (float)projectionTexture.width / (float)projectionTexture.height;
@@ -62,70 +61,70 @@ public class SimpleProjector : MonoBehaviour
         }
     }
 
-void LateUpdate()
-{
-    if (projectorMaterial == null || projectionTexture == null)
-        return;
-
-    // AUTO-TEST: Cycle through Field of View
-    if (autoTestFieldOfView)
+    void LateUpdate()
     {
-        timer += Time.deltaTime * testSpeed;
-        fieldOfView = Mathf.PingPong(timer * 30f, 90f) + 30f;
+        if (projectorMaterial == null || projectionTexture == null)
+            return;
+
+        // AUTO-TEST: Cycle through Field of View
+        if (autoTestFieldOfView)
+        {
+            timer += Time.deltaTime * testSpeed;
+            fieldOfView = Mathf.PingPong(timer * 30f, 90f) + 30f;
+        }
+        // AUTO-TEST: Cycle through aspect ratios
+        else if (autoTestAspectRatio)
+        {
+            timer += Time.deltaTime * testSpeed;
+            aspectRatio = Mathf.PingPong(timer, 2.0f) + 0.5f;
+        }
+        // Auto-calculate aspect ratio from texture if enabled
+        else if (autoCalculateAspectRatio && projectionTexture != null)
+        {
+            aspectRatio = (float)projectionTexture.width / (float)projectionTexture.height;
+        }
+
+        // Set the projection texture
+        projectorMaterial.SetTexture("_MainTex", projectionTexture);
+
+        // Build projection matrix
+        Matrix4x4 projectionMatrix = Matrix4x4.Perspective(
+            fieldOfView,
+            aspectRatio,
+            nearClip,
+            farClip
+        );
+
+        // DEBUG: Log when FOV changes significantly
+        if (Mathf.Abs(fieldOfView - lastLoggedFOV) > 1f)
+        {
+            Debug.Log($"<color=yellow>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>");
+            Debug.Log($"<color=yellow>FOV Changed to: {fieldOfView:F2}°</color>");
+            Debug.Log($"<color=cyan>Projection Matrix m00: {projectionMatrix.m00:F4}</color>");
+            Debug.Log($"<color=cyan>Projection Matrix m11: {projectionMatrix.m11:F4}</color>");
+            Debug.Log($"<color=yellow>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>");
+            lastLoggedFOV = fieldOfView;
+        }
+
+        // Build view matrix (world to projector space)
+        Matrix4x4 viewMatrix = transform.worldToLocalMatrix;
+
+        // Combine them
+        Matrix4x4 finalMatrix = projectionMatrix * viewMatrix;
+
+        // Send to shader
+        projectorMaterial.SetMatrix("_ProjectorMatrix", finalMatrix);
+        projectorMaterial.SetVector("_ProjectorPos", transform.position);
+        projectorMaterial.SetFloat("_Brightness", projectorMaterial.GetFloat("_Brightness"));
+        projectorMaterial.SetFloat("_FalloffPower", projectorMaterial.GetFloat("_FalloffPower"));
+
+        // Debug output
+        if (showDebugInfo && (showDebugEveryFrame || !hasLoggedOnce))
+        {
+            PrintDebugInfo();
+            hasLoggedOnce = true;
+        }
     }
-    // AUTO-TEST: Cycle through aspect ratios
-    else if (autoTestAspectRatio)
-    {
-        timer += Time.deltaTime * testSpeed;
-        aspectRatio = Mathf.PingPong(timer, 2.0f) + 0.5f;
-    }
-    // Auto-calculate aspect ratio from texture if enabled
-    else if (autoCalculateAspectRatio && projectionTexture != null)
-    {
-        aspectRatio = (float)projectionTexture.width / (float)projectionTexture.height;
-    }
-
-    // Set the projection texture
-    projectorMaterial.SetTexture("_MainTex", projectionTexture);
-
-    // Build projection matrix
-    Matrix4x4 projectionMatrix = Matrix4x4.Perspective(
-        fieldOfView,
-        aspectRatio,
-        nearClip,
-        farClip
-    );
-
-    // DEBUG: Log when FOV changes significantly
-    if (Mathf.Abs(fieldOfView - lastLoggedFOV) > 1f)
-    {
-        Debug.Log($"<color=yellow>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>");
-        Debug.Log($"<color=yellow>FOV Changed to: {fieldOfView:F2}°</color>");
-        Debug.Log($"<color=cyan>Projection Matrix m00: {projectionMatrix.m00:F4}</color>");
-        Debug.Log($"<color=cyan>Projection Matrix m11: {projectionMatrix.m11:F4}</color>");
-        Debug.Log($"<color=yellow>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>");
-        lastLoggedFOV = fieldOfView;
-    }
-
-    // Build view matrix (world to projector space)
-    Matrix4x4 viewMatrix = transform.worldToLocalMatrix;
-
-    // Combine them
-    Matrix4x4 finalMatrix = projectionMatrix * viewMatrix;
-
-    // Send to shader
-    projectorMaterial.SetMatrix("_ProjectorMatrix", finalMatrix);
-    projectorMaterial.SetVector("_ProjectorPos", transform.position);
-    projectorMaterial.SetFloat("_Brightness", projectorMaterial.GetFloat("_Brightness"));
-    projectorMaterial.SetFloat("_FalloffPower", projectorMaterial.GetFloat("_FalloffPower"));
-
-    // Debug output
-    if (showDebugInfo && (showDebugEveryFrame || !hasLoggedOnce))
-    {
-        PrintDebugInfo();
-        hasLoggedOnce = true;
-    }
-}
 
     void PrintDebugInfo()
     {
@@ -163,14 +162,30 @@ void LateUpdate()
             Debug.Log($"  Brightness: {projectorMaterial.GetFloat("_Brightness")}");
             Debug.Log($"  Falloff Power: {projectorMaterial.GetFloat("_FalloffPower")}");
 
-            Color surfaceColor = projectorMaterial.GetColor("_SurfaceColor");
-            Debug.Log($"  Surface Color: R={surfaceColor.r:F2}, G={surfaceColor.g:F2}, B={surfaceColor.b:F2}");
+            // NEW: Log surface properties if they exist
+            if (projectorMaterial.HasProperty("_SurfaceAlbedo"))
+            {
+                Debug.Log("<color=green><b>SURFACE PROPERTIES:</b></color>");
+                Color surfaceColor = projectorMaterial.GetColor("_SurfaceAlbedo");
+                Debug.Log($"  Surface Color: RGB({surfaceColor.r:F2}, {surfaceColor.g:F2}, {surfaceColor.b:F2})");
+
+                if (projectorMaterial.HasProperty("_Reflectance"))
+                    Debug.Log($"  Reflectance: {projectorMaterial.GetFloat("_Reflectance"):F2}");
+
+                if (projectorMaterial.HasProperty("_Roughness"))
+                    Debug.Log($"  Roughness: {projectorMaterial.GetFloat("_Roughness"):F2}");
+
+                if (projectorMaterial.HasProperty("_Specular"))
+                    Debug.Log($"  Specular: {projectorMaterial.GetFloat("_Specular"):F2}");
+
+                if (projectorMaterial.HasProperty("_SpecularPower"))
+                    Debug.Log($"  Specular Power: {projectorMaterial.GetFloat("_SpecularPower"):F0}");
+            }
         }
 
         Debug.Log("════════════════════════════════════════════════");
     }
 
-    // Method to find and log target wall info
     public void LogTargetWallInfo(GameObject wall)
     {
         if (wall == null)
@@ -185,11 +200,9 @@ void LateUpdate()
         Debug.Log($"  Scale: {wall.transform.localScale}");
         Debug.Log($"  Wall Aspect Ratio: {wall.transform.localScale.x / wall.transform.localScale.y:F3}");
 
-        // Calculate distance
         float distance = Vector3.Distance(transform.position, wall.transform.position);
         Debug.Log($"  Distance from Projector: {distance:F2} units");
 
-        // Calculate angle
         Vector3 directionToWall = (wall.transform.position - transform.position).normalized;
         float angle = Vector3.Angle(transform.forward, directionToWall);
         Debug.Log($"  Angle from Projector Forward: {angle:F2}°");
