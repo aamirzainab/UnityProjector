@@ -1,5 +1,5 @@
 using UnityEngine;
-
+[ExecuteAlways]
 public class SimpleProjector : MonoBehaviour
 {
     [Header("Projection Settings")]
@@ -123,11 +123,36 @@ public class SimpleProjector : MonoBehaviour
         {
             PrintDebugInfo();
             hasLoggedOnce = true;
+
         }
+
     }
 
     void PrintDebugInfo()
     {
+
+        Debug.Log("=== PROJECTOR MATERIAL VALUES ===");
+        Debug.Log($"Brightness: {projectorMaterial.GetFloat("_Brightness")}");
+        Debug.Log($"Reflectance: {projectorMaterial.GetFloat("_Reflectance")}");
+        Debug.Log($"Falloff Power: {projectorMaterial.GetFloat("_FalloffPower")}");
+        Debug.Log($"Black Level: {projectorMaterial.GetFloat("_BlackLevel")}");
+
+        Debug.Log($"Black Level: {projectorMaterial.GetFloat("_BlackLevel")}");
+
+        // ADD THESE LINES:
+        Texture mainTex = projectorMaterial.GetTexture("_MainTex");
+        if (mainTex != null)
+            Debug.Log($"Projection Texture (_MainTex): {mainTex.name}");
+        else
+            Debug.LogError("NO PROJECTION TEXTURE (_MainTex) ASSIGNED!");
+
+        Texture baseTex = projectorMaterial.GetTexture("_BaseColor");
+        if (baseTex != null)
+            Debug.Log($"Base Color Texture: {baseTex.name}");
+        else
+            Debug.LogWarning("NO BASE COLOR TEXTURE!");
+
+        Debug.Log("================================");
         Debug.Log("════════════════════════════════════════════════");
         Debug.Log("<color=yellow><b>PROJECTOR DEBUG INFO</b></color>");
         Debug.Log("════════════════════════════════════════════════");
